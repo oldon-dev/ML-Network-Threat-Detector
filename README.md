@@ -404,7 +404,7 @@ Potential extensions include:
 
 # Conclusion
 
-SentinelFlow provides a modular and extensible foundation for building machine-learning-based network intrusion detection systems.
+This project provides a modular and extensible foundation for building machine-learning-based network intrusion detection systems.
 
 The project demonstrates how modern security tools can combine traffic telemetry, statistical analysis, and machine learning to identify malicious behavior in real time.
 
