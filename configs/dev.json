@@ -1,9 +1,0 @@
-{
-  "interface": "\\Device\\NPF_{4C4DC3CF-876E-474D-AAEE-B0D3E47731EB}",
-  "capture_timeout": 10,
-  "inactive_timeout": 5,
-  "active_timeout": 30,
-  "binary_threshold": 0.80,
-  "family_confidence_threshold": 0.60,
-  "mode": "live"
-}
