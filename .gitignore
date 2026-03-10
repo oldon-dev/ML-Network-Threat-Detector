@@ -1,0 +1,24 @@
+
+
+# This .gitignore file is used to specify intentionally untracked files that Git should ignore.
+# The patterns in this file are relative to the directory where the .gitignore file is located.
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+# Ignore virtual environment directories
+venv/
+env/
+# Ignore log files
+*.log
+# Ignore dataset files
+data/
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+# Ignore system files
+.DS_Store
+# Ignore IDE specific files
+.vscode/
+.idea/
+
+ignore.txt
