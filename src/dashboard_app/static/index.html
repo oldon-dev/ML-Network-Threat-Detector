@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SentinelFlow Command Console</title>
+    <link rel="stylesheet" href="/app.css">
+  </head>
+  <body>
+    <div class="screen-noise"></div>
+    <main class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">SentinelFlow</p>
+          <h1>Threat Detection Command Console</h1>
+          <p class="lede">
+            Real-time network telemetry, machine-learning detections, and analyst-facing triage in one local control surface.
+          </p>
+        </div>
+        <div class="hero-actions">
+          <button id="refreshButton" class="button secondary">Refresh Intel</button>
+          <label class="toggle">
+            <input id="autoRefreshToggle" type="checkbox" checked>
+            <span>Auto refresh</span>
+          </label>
+        </div>
+      </header>
+
+      <section class="layout">
+        <div class="stack">
+          <section class="panel control-panel">
+            <div class="panel-header">
+              <h2>Live Monitoring Control</h2>
+              <span id="monitorBadge" class="status-pill neutral">Idle</span>
+            </div>
+            <div class="control-grid">
+              <label class="field">
+                <span>Capture Interface</span>
+                <select id="interfaceSelect"></select>
+              </label>
+              <div class="button-row">
+                <button id="startMonitorButton" class="button primary">Start Monitoring</button>
+                <button id="stopMonitorButton" class="button danger">Stop Monitoring</button>
+              </div>
+            </div>
+            <div id="monitorMeta" class="meta-grid"></div>
+          </section>
+
+          <section class="stats-grid" id="statsGrid"></section>
+
+          <section class="panel threat-landscape">
+            <div class="panel-header">
+              <h2>Threat Landscape</h2>
+              <span class="panel-note">Recent detections and traffic distribution</span>
+            </div>
+            <div class="viz-grid">
+              <div>
+                <h3>Attack Families</h3>
+                <div id="familyChart" class="bar-list"></div>
+              </div>
+              <div>
+                <h3>Severity Breakdown</h3>
+                <div id="severityChart" class="bar-list"></div>
+              </div>
+              <div>
+                <h3>Protocol Mix</h3>
+                <div id="protocolChart" class="bar-list"></div>
+              </div>
+              <div>
+                <h3>Detection Cadence</h3>
+                <div id="activityChart" class="bar-list compact"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel alerts-panel">
+            <div class="panel-header">
+              <h2>Alert Triage</h2>
+              <div class="filters">
+                <select id="severityFilter">
+                  <option value="">All severities</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+                <input id="alertSearch" type="search" placeholder="Search IP, family, reason">
+              </div>
+            </div>
+            <div id="alertsList" class="alert-list"></div>
+          </section>
+        </div>
+
+        <aside class="stack side-stack">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Analysis Jobs</h2>
+              <span class="panel-note">PCAP / CSV replay and review</span>
+            </div>
+            <div class="field">
+              <span>Prepared Dataset</span>
+              <select id="datasetSelect"></select>
+            </div>
+            <div class="field">
+              <span>Custom Path</span>
+              <input id="datasetPathInput" type="text" placeholder="C:\path\to\dataset.csv">
+            </div>
+            <button id="runAnalysisButton" class="button primary wide">Run Dataset Analysis</button>
+            <div id="jobList" class="job-list"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Flow Explorer</h2>
+              <span class="panel-note">Latest reconstructed traffic</span>
+            </div>
+            <div id="flowList" class="flow-list"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Model and Policy</h2>
+              <span class="panel-note">Detection stack configuration</span>
+            </div>
+            <div id="settingsList" class="settings-list"></div>
+          </section>
+
+          <section class="panel console-panel">
+            <div class="panel-header">
+              <h2>Operator Console</h2>
+              <span class="panel-note">Runtime stdout tail</span>
+            </div>
+            <pre id="consoleOutput" class="console-output"></pre>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <template id="statCardTemplate">
+      <article class="stat-card">
+        <p class="stat-label"></p>
+        <strong class="stat-value"></strong>
+        <span class="stat-footnote"></span>
+      </article>
+    </template>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

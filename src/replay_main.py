@@ -12,9 +12,19 @@ from flows.flow_table import FlowTable
 
 def process_completed_flow(flow, detector, source_name: str):
     features = flow_to_features(flow)
-    log_flow(flow, features)
+    decision = should_skip_flow(flow)
+    log_flow(
+        flow,
+        features,
+        source_name=source_name,
+        mode="replay",
+        sent_to_ml=not decision.skip,
+        decision_reason=decision.reason,
+    )
 
-    skip, skip_reason = should_skip_flow(flow)
+    if decision.skip:
+        return
+
     #if skip:
     #    print(
     #        f"Skipped flow [{source_name}]: "
@@ -46,7 +56,7 @@ def process_completed_flow(flow, detector, source_name: str):
         )
         print(f"Reasons: {', '.join(reasons)}")
 
-        log_alert(flow, result, features, reasons)
+        log_alert(flow, result, features, reasons, source_name=source_name, mode="replay")
     #else:
     #    print("Detection result: normal")
 

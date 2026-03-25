@@ -72,7 +72,14 @@ def process_feature_dict(
     features = dict(features)
     features["filter_tags"] = features.get("filter_tags", [])
 
-    log_flow(flow_like, features)
+    log_flow(
+        flow_like,
+        features,
+        source_name=source_name,
+        mode="dataset",
+        sent_to_ml=True,
+        decision_reason="prepared dataset row sent directly to detection",
+    )
 
     try:
         result = detector.predict(features)
@@ -109,7 +116,7 @@ def process_feature_dict(
         print(f"Reasons: {', '.join(reasons)}")
 
         result["severity"] = severity
-        log_alert(flow_like, result, features, reasons)
+        log_alert(flow_like, result, features, reasons, source_name=source_name, mode="dataset")
         stats.alerts_triggered += 1
 
 
@@ -119,7 +126,14 @@ def process_completed_flow(flow, detector, stats: RuntimeStats, source_name: str
     decision = should_skip_flow(flow)
     features["filter_tags"] = decision.tags
 
-    log_flow(flow, features)
+    log_flow(
+        flow,
+        features,
+        source_name=source_name,
+        mode="dataset",
+        sent_to_ml=not decision.skip,
+        decision_reason=decision.reason,
+    )
 
     if decision.skip:
         stats.skipped_flows += 1
@@ -160,7 +174,7 @@ def process_completed_flow(flow, detector, stats: RuntimeStats, source_name: str
         print(f"Reasons: {', '.join(reasons)}")
 
         result["severity"] = severity
-        log_alert(flow, result, features, reasons)
+        log_alert(flow, result, features, reasons, source_name=source_name, mode="dataset")
         stats.alerts_triggered += 1
 
 
@@ -192,6 +206,8 @@ def analyze_pcap(dataset_path: Path, detector, stats: RuntimeStats, metrics: Sys
                     stats=stats,
                     active_flows=len(flow_table.flows),
                     metrics=metrics,
+                    mode="dataset",
+                    source_name=dataset_path.name,
                 )
                 last_status_time = now
 
@@ -246,6 +262,8 @@ def analyze_csv(dataset_path: Path, detector, stats: RuntimeStats, metrics: Syst
                     stats=stats,
                     active_flows=0,
                     metrics=metrics,
+                    mode="dataset",
+                    source_name=dataset_path.name,
                 )
                 last_status_time = now
 
@@ -294,6 +312,8 @@ def main():
         stats=stats,
         active_flows=0,
         metrics=metrics,
+        mode="dataset",
+        source_name=dataset_path.name,
     )
     print(f"\nDataset analysis complete for: {dataset_path.name}")
 

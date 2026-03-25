@@ -1,0 +1,1 @@
+"""SentinelFlow dashboard application package."""

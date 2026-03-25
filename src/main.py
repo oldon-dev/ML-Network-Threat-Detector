@@ -1,6 +1,6 @@
 import time
 
-from alerts.logger import log_alert, log_flow
+from alerts.logger import log_alert, log_flow, log_packet
 from capture.sniff import auto_select_interface, list_interfaces, packet_stream
 from common.config import (
     ACTIVE_FLOW_TIMEOUT,
@@ -43,13 +43,20 @@ def resolve_interface() -> str:
     return selected
 
 
-def process_completed_flow(flow, detector, stats: RuntimeStats):
+def process_completed_flow(flow, detector, stats: RuntimeStats, source_name: str):
     features = flow_to_features(flow)
 
     decision = should_skip_flow(flow)
     features["filter_tags"] = decision.tags
 
-    log_flow(flow, features)
+    log_flow(
+        flow,
+        features,
+        source_name=source_name,
+        mode="live",
+        sent_to_ml=not decision.skip,
+        decision_reason=decision.reason,
+    )
 
     if decision.skip:
         stats.skipped_flows += 1
@@ -89,7 +96,7 @@ def process_completed_flow(flow, detector, stats: RuntimeStats):
         print(f"Reasons: {', '.join(reasons)}")
 
         result["severity"] = severity
-        log_alert(flow, result, features, reasons)
+        log_alert(flow, result, features, reasons, source_name=source_name, mode="live")
         stats.alerts_triggered += 1
 
 
@@ -121,10 +128,11 @@ def main():
     try:
         for packet in packet_stream(interface=selected_interface):
             stats.packets_seen += 1
+            log_packet(packet, source_name=selected_interface, mode="live")
 
             completed_flows = flow_table.consume(packet)
             for flow in completed_flows:
-                process_completed_flow(flow, detector, stats)
+                process_completed_flow(flow, detector, stats, selected_interface)
 
             metrics.sample()
 
@@ -134,6 +142,8 @@ def main():
                     stats=stats,
                     active_flows=len(flow_table.flows),
                     metrics=metrics,
+                    mode="live",
+                    source_name=selected_interface,
                 )
                 last_status_time = now
 
@@ -143,12 +153,14 @@ def main():
     finally:
         remaining_flows = flow_table.flush_all()
         for flow in remaining_flows:
-            process_completed_flow(flow, detector, stats)
+            process_completed_flow(flow, detector, stats, selected_interface)
 
         print_status(
             stats=stats,
             active_flows=0,
             metrics=metrics,
+            mode="live",
+            source_name=selected_interface,
         )
         print("\nShutdown complete.")
 

@@ -1,0 +1,16 @@
+{
+  "mode": "live",
+  "source_name": "\\Device\\NPF_{4C4DC3CF-876E-474D-AAEE-B0D3E47731EB}",
+  "uptime": "0:02:50",
+  "uptime_seconds": 170.635614,
+  "analyzed_packets": 2778,
+  "skipped_flows": 46,
+  "ml_analyzed_flows": 118,
+  "completed_flows": 118,
+  "alerts": 0,
+  "active_flows": 8,
+  "avg_cpu": 3.83,
+  "avg_memory": 81.99083333333333,
+  "session_id": "587a0732f683",
+  "updated_at": "2026-03-25T01:08:17.998699+00:00"
+}
