@@ -1,16 +1,16 @@
 {
   "mode": "live",
   "source_name": "\\Device\\NPF_{4C4DC3CF-876E-474D-AAEE-B0D3E47731EB}",
-  "uptime": "0:02:50",
-  "uptime_seconds": 170.635614,
-  "analyzed_packets": 2778,
-  "skipped_flows": 46,
-  "ml_analyzed_flows": 118,
-  "completed_flows": 118,
+  "uptime": "0:06:41",
+  "uptime_seconds": 401.385027,
+  "analyzed_packets": 18660,
+  "skipped_flows": 250,
+  "ml_analyzed_flows": 489,
+  "completed_flows": 489,
   "alerts": 0,
-  "active_flows": 8,
-  "avg_cpu": 3.83,
-  "avg_memory": 81.99083333333333,
+  "active_flows": 12,
+  "avg_cpu": 4.820833333333334,
+  "avg_memory": 94.75166666666668,
   "session_id": "587a0732f683",
-  "updated_at": "2026-03-25T01:08:17.998699+00:00"
+  "updated_at": "2026-03-25T01:12:08.748087+00:00"
 }

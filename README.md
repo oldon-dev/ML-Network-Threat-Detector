@@ -1,410 +1,374 @@
-# Project: SentinelFlow – Real-Time Network Malware Detection System
+# ML Network Analyzer
 
-## Overview
-SentinelFlow is a real-time network security monitoring system designed to detect malicious network activity using machine learning and flow-based traffic analysis. The system captures live network packets, reconstructs bidirectional flows, extracts statistical traffic features, and applies trained machine learning models to classify traffic as benign or malicious.
+ML Network Analyzer is a Windows desktop application for real-time network monitoring and offline traffic analysis. It captures packets, reconstructs bidirectional flows, extracts traffic features, filters low-value traffic, applies machine learning models, and logs malicious detections with human-readable reasons.
 
-The project demonstrates how modern cybersecurity tools combine network telemetry, feature engineering, and machine learning to identify attacks such as denial-of-service attempts, brute-force activity, and abnormal traffic patterns.
+The current desktop UI is a native `PySide6` application. It provides:
 
-SentinelFlow operates in two modes:
+- live monitoring control
+- dashboard metrics and threat views
+- packet telemetry
+- recent threat traffic
+- flows sent to the ML engine with routing reasons
+- dataset analysis jobs
+- session history
 
-1. **Live Monitoring Mode** – captures packets from a network interface in real time.
-2. **Dataset Analysis Mode** – analyzes PCAP or CSV datasets to evaluate detection performance.
+## Main Features
 
----
+- Live packet capture from a network interface
+- Automatic interface selection when no interface is chosen
+- Bidirectional flow reconstruction
+- Lightweight flow filtering before ML scoring
+- Binary malicious / benign classification
+- Multiclass attack family prediction
+- Human-readable detection reasons
+- Structured JSONL logging for packets, flows, and alerts
+- Native Windows desktop UI for monitoring and review
+- Offline analysis of `.pcap`, `.pcapng`, and `.csv` datasets
 
-# Architecture
+## Desktop App
 
-The system is organized into modular components that reflect the stages of a network detection pipeline.
+Main entry point:
 
+```powershell
+py src/app.py
 ```
+
+The desktop application title is:
+
+```text
+ML Network Analyzer
+```
+
+Main tabs:
+
+- Monitoring
+- Dashboard
+- Threats
+- Sessions
+- Packet Log
+- Analysis
+
+### Monitoring Tab
+
+The Monitoring tab lets you:
+
+- choose a capture interface
+- start live monitoring
+- stop live monitoring
+- view live runtime status
+- view monitoring worker console output
+
+When monitoring is already active, the `Start Monitoring` button is disabled and `Stop Monitoring` is enabled.
+
+### Dashboard Tab
+
+The Dashboard shows:
+
+- inline top metrics for alerts, packets, ML analyzed flows, active flows, and CPU
+- a compact threat landscape
+- recent threat traffic
+- traffic sent to the ML engine and the routing reason
+
+### Threats Tab
+
+The Threats tab shows:
+
+- recent alerts
+- attack family
+- severity
+- score and confidence
+- source and destination
+- analyst reasons
+- feature summary
+
+### Sessions Tab
+
+The Sessions tab shows archived monitoring sessions with:
+
+- start and stop time
+- uptime
+- packet count
+- threat count
+- interface
+- summary details
+
+### Packet Log Tab
+
+The Packet Log tab shows recent packet telemetry for the active session.
+
+### Analysis Tab
+
+The Analysis tab lets you launch offline analysis jobs against:
+
+- `.pcap`
+- `.pcapng`
+- `.csv`
+
+## Requirements
+
+Python 3.11+ is recommended.
+
+Install the base dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
+
+Install the desktop UI dependency:
+
+```powershell
+pip install PySide6
+```
+
+Notes:
+
+- `PySide6` is required for the current Windows desktop UI.
+- Live capture relies on `scapy`.
+- Packet capture may require elevated privileges depending on your adapter and Windows configuration.
+
+## Running the Project
+
+### 1. Launch the Desktop App
+
+```powershell
+py src/app.py
+```
+
+### 2. Run Live Monitoring Without the UI
+
+```powershell
+py src/main.py
+```
+
+### 3. Analyze a PCAP File
+
+```powershell
+py src/dataset_main.py path\to\traffic.pcap
+```
+
+### 4. Analyze a CSV Feature Dataset
+
+```powershell
+py src/dataset_main.py path\to\dataset.csv
+```
+
+## High-Level Pipeline
+
+```text
 Packet Capture
-      │
-      ▼
-Flow Reconstruction
-      │
-      ▼
-Feature Extraction
-      │
-      ▼
-Traffic Filtering
-      │
-      ▼
-ML Detection Engine
-      │
-      ▼
-Attack Classification
-      │
-      ▼
-Alert Logging + Explanations
+  -> Flow Reconstruction
+  -> Feature Extraction
+  -> Traffic Filtering
+  -> ML Detection
+  -> Attack Classification
+  -> Alert Logging + Explanations
 ```
 
-Each stage is implemented in a dedicated module to maintain separation of concerns and improve maintainability.
+## Core Components
 
----
+### Packet Capture
 
-# Core Components
-
-## Packet Capture
 Location:
 
-```
+```text
 src/capture/
 ```
 
-The capture module uses **Scapy** to monitor network interfaces and stream packets into the system.
-
-Capabilities:
-
-- Enumerate available interfaces
-- Automatically select the interface with the highest traffic
-- Stream packets continuously
-- Replay packets from PCAP datasets
-
 Key files:
 
-```
-sniff.py
-replay.py
-probe_interfaces.py
-```
+- `sniff.py`
+- `replay.py`
+- `probe_interfaces.py`
 
----
+Responsibilities:
 
-# Flow Reconstruction
+- enumerate interfaces
+- auto-select the busiest interface
+- capture live packets
+- replay PCAP traffic
+
+### Flow Reconstruction
+
 Location:
 
-```
+```text
 src/flows/
 ```
 
-Network packets are aggregated into **bidirectional flows**, representing a full communication session between two endpoints.
-
-A flow is uniquely identified by:
-
-```
-(src_ip, src_port, dst_ip, dst_port, protocol)
-```
-
-The flow system maintains an in-memory flow table and expires flows using two timers:
-
-| Timer | Purpose |
-|------|--------|
-| Inactive Timeout | Flow ends after inactivity |
-| Active Timeout | Flow forcibly closed after long duration |
-
 Key files:
 
-```
-flow_key.py
-flow_record.py
-flow_table.py
-```
+- `flow_key.py`
+- `flow_record.py`
+- `flow_table.py`
 
----
+Responsibilities:
 
-# Feature Extraction
+- group packets into bidirectional flows
+- track forward and reverse packet and byte counts
+- expire inactive or long-running flows
+
+### Feature Extraction
+
 Location:
 
-```
+```text
 src/features/extractor.py
 ```
 
-Each completed flow is converted into numerical features used by the ML models.
+Example features:
 
-Examples of extracted features:
-
-- Flow duration
-- Forward / reverse packet counts
-- Forward / reverse byte counts
-- Packet rate
-- Byte rate
-- Packet size statistics
-- Inter-arrival time statistics
+- flow duration
+- forward and reverse packets
+- forward and reverse bytes
+- packets per second
+- bytes per second
+- packet size statistics
+- inter-arrival statistics
 - TCP flag counts
 
-These features mirror those used in common network intrusion datasets such as CIC-IDS.
+### Traffic Filtering
 
-The extractor guarantees that live flows produce the same feature schema used during model training.
-
----
-
-# Traffic Filtering
 Location:
 
-```
+```text
 src/detection/filtering.py
 ```
 
-Before sending traffic to the ML engine, the system performs lightweight filtering to eliminate irrelevant traffic and tag flows with contextual metadata.
+Filtering does two things:
 
-Examples:
+1. skips obviously irrelevant traffic
+2. tags flows with context before ML scoring
 
-Hard skips:
+Examples of skip conditions:
 
 - loopback traffic
 - multicast traffic
 - broadcast traffic
-- extremely small flows
+- too few packets
+- too few bytes
 
-Context tags:
+Examples of tags:
 
-- DNS
-- HTTP
-- HTTPS
-- ephemeral ports
-- high packet rate
-- short flows
+- `dns`
+- `http`
+- `https`
+- `short_flow`
+- `high_packet_rate`
+- `one_way`
 
-Filtering reduces noise while preserving potentially malicious flows.
+### ML Detection
 
----
-
-# Machine Learning Detection
 Location:
 
-```
+```text
 src/detection/
 ```
 
-The detection engine uses two models:
+The detection pipeline uses:
 
-### Binary Model
+- one binary model for malicious / benign prediction
+- one multiclass model for attack family prediction
 
-Determines whether traffic is:
+### Explanations
 
-```
-benign
-malicious
-```
-
-### Multiclass Model
-
-If traffic is suspicious, the second model predicts the **attack family**.
-
-Possible classes include:
-
-- DoS
-- DDoS
-- Port Scan
-- Brute Force
-- Bot activity
-- Web attack
-- Unknown suspicious
-
-The system uses probability thresholds to determine when alerts should be raised.
-
----
-
-# Attack Explanation Engine
 Location:
 
-```
+```text
 src/detection/explainer.py
 ```
 
-To improve interpretability, the system generates human-readable explanations for each alert.
+Each alert can include reasons such as:
 
-Example reasoning:
-
-```
 - high packet rate
-- one-way traffic pattern
-- asymmetric traffic volume
 - unusual destination port
-```
+- one-way traffic pattern
+- suspicious communication pattern
 
-This makes alerts understandable to analysts instead of presenting only a raw model score.
+### Logging
 
----
-
-# Alert Logging
 Location:
 
-```
+```text
 src/alerts/logger.py
 ```
 
-Alerts and flow records are stored in structured logs.
+Main logs:
 
-Two log streams are generated:
-
-```
+```text
 logs/alerts.jsonl
 logs/flows.jsonl
+logs/packets.jsonl
+logs/runtime_live.json
+logs/session_history.json
 ```
 
-Each alert includes:
+What is logged:
 
-- timestamp
-- source / destination
-- attack family
-- confidence
-- severity
-- explanation
+- alerts with score, family, confidence, severity, and reasons
+- flows with features, filter tags, and ML routing metadata
+- packets for the active session
+- runtime status snapshots
+- completed monitoring session summaries
 
-These logs can later be ingested into SIEM systems or analytics pipelines.
+## Project Structure
 
----
+```text
+src/
+  alerts/             alert, flow, and packet logging
+  capture/            live and replay packet capture
+  common/             config and runtime helpers
+  dashboard_app/      payload building and runtime management
+  datasets/           dataset preparation scripts
+  detection/          filtering, classification, explanations
+  features/           feature extraction
+  flows/              flow tracking
+  training/           model training and evaluation
 
-# Runtime Monitoring
-
-The system prints operational statistics every 30 seconds:
-
-Example status output:
-
-```
-[STATUS] uptime=00:10:30
-analyzed_packets=25000
-skipped_flows=400
-ml_analyzed_flows=3200
-completed_flows=3500
-alerts=12
-active_flows=20
-avg_cpu=12%
-avg_memory=6%
-```
-
-This allows operators to verify system performance and traffic load.
-
----
-
-# Dataset Analysis Mode
-
-The system can also analyze datasets offline.
-
-Supported formats:
-
-```
-.pcap
-.pcapng
-.csv
+  app.py              desktop app launcher
+  qt_desktop_app.py   PySide6 desktop UI
+  desktop_app.py      older Tk desktop UI
+  main.py             live monitor worker
+  dataset_main.py     offline dataset analysis
+  replay_main.py      replay mode
 ```
 
-Commands:
+## Training and Models
 
-```
-python src/dataset_main.py dataset.pcap
+Training code is under:
 
-python src/dataset_main.py dataset.csv
-```
-
-CSV datasets must contain the same feature columns used during training.
-
----
-
-# Machine Learning Training Pipeline
-
-Location:
-
-```
+```text
 src/training/
 ```
 
-The training pipeline prepares multiple datasets under a unified schema.
+Model artifacts are expected under:
 
-Steps:
-
-1. Dataset discovery
-2. Feature alignment
-3. Label mapping
-4. Dataset merging
-5. Model training
-6. Model evaluation
-
-Two models are produced:
-
-```
-binary detector
-multiclass attack classifier
-```
-
-The models are stored as joblib artifacts:
-
-```
+```text
 data/models/
 ```
 
-Each artifact contains:
+The application expects model artifacts that include:
 
-```
-model
-feature_columns
-metadata
-```
+- the trained estimator
+- the feature column list
+- metadata used by the detector
 
----
+## Operational Notes
 
-# Project Structure
+- The dashboard refreshes frequently in the desktop UI.
+- The monitoring worker writes runtime snapshots even though periodic heartbeat logs were removed from the console.
+- Flows sent to the ML engine are logged with `sent_to_ml` and `decision_reason`.
+- Existing logs from older runs may not contain the newer routing metadata fields.
 
-```
-src/
+## Known Constraints
 
-alerts/        alert logging
-capture/       packet capture
-common/        configuration and runtime utilities
-datasets/      dataset preparation scripts
-detection/     ML detection engine
-features/      feature extraction
-flows/         network flow tracking
-training/      model training pipeline
+- Real packet capture behavior depends on local adapter permissions and Windows packet capture support.
+- The newer desktop UI requires `PySide6`.
+- The older Tk UI file still exists in the repository, but `src/app.py` now launches the Qt desktop app.
 
-main.py        live network monitoring
-replay_main.py dataset replay
-dataset_main.py dataset analyzer
-```
+## Suggested Next Improvements
 
----
-
-# Example Usage
-
-Live monitoring:
-
-```
-python src/main.py
-```
-
-Analyze PCAP:
-
-```
-python src/dataset_main.py traffic.pcap
-```
-
-Analyze CSV dataset:
-
-```
-python src/dataset_main.py dataset.csv
-```
-
----
-
-# Key Technical Concepts Demonstrated
-
-This project demonstrates several important cybersecurity engineering concepts:
-
-- Real-time packet capture
-- Flow-based network analysis
-- Feature engineering for network traffic
-- Machine learning inference pipelines
-- Streaming processing systems
-- Runtime monitoring and telemetry
-
----
-
-# Future Improvements
-
-Potential extensions include:
-
-- model retraining with additional datasets
-- integration with SIEM platforms
-- real-time dashboards
-- distributed capture agents
-- deep packet inspection features
-
----
-
-# Conclusion
-
-This project provides a modular and extensible foundation for building machine-learning-based network intrusion detection systems.
-
-The project demonstrates how modern security tools can combine traffic telemetry, statistical analysis, and machine learning to identify malicious behavior in real time.
-
+- add packet and flow filtering controls in the UI
+- add richer charting in the Qt dashboard
+- add export for session summaries and alerts
+- package the Qt desktop app into a Windows executable
+- add model health and version panels
